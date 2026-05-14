@@ -1,0 +1,28 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "Information for student ID cards",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "admissionNumber": { "type": "string" },
+        "studentClass": { "type": "string" },
+        "dob": { "type": "string" },
+        "fatherName": { "type": "string" },
+        "motherName": { "type": "string" },
+        "mobileNumber": { "type": "string" },
+        "address": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "session": { "type": "string" }
+      },
+      "required": ["name", "admissionNumber"]
+    }
+  },
+  "firestore": {
+    "students/{studentId}": {
+      "schema": "Student",
+      "description": "Collection of student records"
+    }
+  }
+}
