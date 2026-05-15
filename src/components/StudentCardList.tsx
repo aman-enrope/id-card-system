@@ -29,6 +29,7 @@ export default function StudentCardList() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [exportFormat, setExportFormat] = useState<'png' | 'jpeg' | 'pdf'>('png');
+  const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
 
   const filteredStudents = students.filter(s =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -142,12 +143,15 @@ export default function StudentCardList() {
 
   const handleImageUpload = async (studentId: string, file: File) => {
     try {
+      setUploadingImageId(studentId);
       const storageRef = ref(storage, `student_photos/${studentId}`);
       await uploadBytes(storageRef, file);
       const url = await getDownloadURL(storageRef);
       await updateStudent(studentId, { photoURL: url });
     } catch (err) {
       console.error('Image upload failed', err);
+    } finally {
+      setUploadingImageId(null);
     }
   };
 
@@ -244,13 +248,23 @@ export default function StudentCardList() {
                         label="Modify Identity Data"
                         onClick={() => setEditingId(student.id)}
                       />
-                      <label className="flex items-center gap-3 px-6 py-4 bg-slate-50 border border-slate-100 rounded-3xl hover:bg-slate-100 hover:border-slate-200 cursor-pointer transition-all text-sm font-bold text-slate-700">
-                        <ImagePlus className="w-4 h-4 text-[#11365c]" />
-                        Update Profile Image
+                      <label className="flex items-center gap-3 px-6 py-4 bg-slate-50 border border-slate-100 rounded-3xl hover:bg-slate-100 hover:border-slate-200 cursor-pointer transition-all text-sm font-bold text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed" style={{ pointerEvents: uploadingImageId === student.id ? 'none' : 'auto', opacity: uploadingImageId === student.id ? 0.6 : 1 }}>
+                        {uploadingImageId === student.id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 text-[#11365c] animate-spin" />
+                            Uploading Image...
+                          </>
+                        ) : (
+                          <>
+                            <ImagePlus className="w-4 h-4 text-[#11365c]" />
+                            Update Profile Image
+                          </>
+                        )}
                         <input
                           type="file"
                           className="hidden"
                           accept="image/*"
+                          disabled={uploadingImageId === student.id}
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) handleImageUpload(student.id, file);
@@ -319,6 +333,7 @@ function EditForm({ student, onSave, onCancel }: { student: Student; onSave: () 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2 animate-in fade-in slide-in-from-top-1">
+      <Input label="S. No." value={String(formData.serialNumber || '')} onChange={(v) => setFormData({ ...formData, serialNumber: v ? parseInt(v) : undefined })} type="number" />
       <Input label="Name" value={formData.name} onChange={(v) => setFormData({ ...formData, name: v })} />
       <Input label="Adm. No" value={formData.admissionNumber} onChange={(v) => setFormData({ ...formData, admissionNumber: v })} />
       <Input label="Class" value={formData.studentClass} onChange={(v) => setFormData({ ...formData, studentClass: v })} />
@@ -326,6 +341,14 @@ function EditForm({ student, onSave, onCancel }: { student: Student; onSave: () 
       <Input label="Mother's" value={formData.motherName} onChange={(v) => setFormData({ ...formData, motherName: v })} />
       <Input label="DOB" value={formData.dob} onChange={(v) => setFormData({ ...formData, dob: v })} />
       <Input label="Mobile" value={formData.mobileNumber} onChange={(v) => setFormData({ ...formData, mobileNumber: v })} />
+      <div className="flex flex-col gap-0.5">
+        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Address</label>
+        <textarea
+          value={formData.address}
+          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+          className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1 focus:ring-1 focus:ring-blue-500 outline-none resize-none h-20"
+        />
+      </div>
       <div className="flex gap-2 mt-4">
         <button type="submit" className="flex-1 bg-blue-600 text-white rounded-lg py-2 text-sm font-bold flex items-center justify-center gap-1">
           <Save className="w-4 h-4" /> Save
@@ -338,12 +361,12 @@ function EditForm({ student, onSave, onCancel }: { student: Student; onSave: () 
   );
 }
 
-function Input({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function Input({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
   return (
     <div className="flex flex-col gap-0.5">
       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{label}</label>
       <input
-        type="text"
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1 focus:ring-1 focus:ring-blue-500 outline-none"

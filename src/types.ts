@@ -1,5 +1,6 @@
 export interface Student {
   id: string;
+  serialNumber?: number; // S. No. for sorting
   name: string;
   admissionNumber: string;
   studentClass: string; // 'class' is a reserved word in JS/TS

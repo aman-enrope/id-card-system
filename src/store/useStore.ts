@@ -87,7 +87,7 @@ export const useStore = create<IDStore>((set, get) => ({
   fetchStudents: async () => {
     set({ loading: true });
     try {
-      const q = query(collection(db, COLLECTION_NAME));
+      const q = query(collection(db, COLLECTION_NAME), orderBy('serialNumber', 'asc'));
       const querySnapshot = await getDocs(q);
       const students = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -95,8 +95,25 @@ export const useStore = create<IDStore>((set, get) => ({
       })) as Student[];
       set({ students, loading: false });
     } catch (error) {
-      handleFirestoreError(error, 'list', COLLECTION_NAME);
-      set({ error: (error as Error).message, loading: false });
+      // If serialNumber doesn't exist in index, fallback to unordered query
+      try {
+        const q = query(collection(db, COLLECTION_NAME));
+        const querySnapshot = await getDocs(q);
+        const students = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Student[];
+        // Sort by serialNumber on client side
+        students.sort((a, b) => {
+          const aSerial = a.serialNumber || Infinity;
+          const bSerial = b.serialNumber || Infinity;
+          return aSerial - bSerial;
+        });
+        set({ students, loading: false });
+      } catch (fallbackError) {
+        handleFirestoreError(fallbackError, 'list', COLLECTION_NAME);
+        set({ error: (fallbackError as Error).message, loading: false });
+      }
     }
   },
 

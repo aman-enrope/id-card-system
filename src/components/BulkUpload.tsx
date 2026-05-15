@@ -11,6 +11,7 @@ export default function BulkUpload() {
   const { bulkAddStudents } = useStore();
   const [isUploading, setIsUploading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [convertToUppercase, setConvertToUppercase] = useState(false);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -57,17 +58,23 @@ export default function BulkUpload() {
     try {
       const validStudents = data
         .filter(row => row.name && row.admissionNumber)
-        .map(row => ({
-          name: String(row.name || ''),
-          admissionNumber: String(row.admissionNumber || ''),
-          studentClass: String(row.class || row.studentClass || ''),
-          dob: String(row.dob || ''),
-          fatherName: String(row.fatherName || ''),
-          motherName: String(row.motherName || ''),
-          mobileNumber: String(row.mobileNumber || ''),
-          address: String(row.address || ''),
-          session: row.session || '2025-2026',
-        }));
+        .map(row => {
+          // Convert text fields to uppercase if checkbox is enabled
+          const textToConvert = (text: string) => convertToUppercase ? String(text).toUpperCase() : String(text);
+
+          return {
+            serialNumber: row['S. No.'] ? parseInt(String(row['S. No.'])) : undefined,
+            name: textToConvert(row.name || ''),
+            admissionNumber: textToConvert(row.admissionNumber || ''),
+            studentClass: textToConvert(row.class || row.studentClass || ''),
+            dob: String(row.dob || ''),
+            fatherName: textToConvert(row.fatherName || ''),
+            motherName: textToConvert(row.motherName || ''),
+            mobileNumber: String(row.mobileNumber || ''),
+            address: textToConvert(row.address || ''),
+            session: row.session || '2025-2026',
+          };
+        });
 
       if (validStudents.length === 0) {
         throw new Error('No valid student data found in file.');
@@ -85,6 +92,7 @@ export default function BulkUpload() {
   const downloadTemplate = () => {
     const template = [
       {
+        'S. No.': 1,
         name: 'John Doe',
         admissionNumber: '1001',
         class: '10th',
@@ -116,6 +124,21 @@ export default function BulkUpload() {
           <FileDown className="w-3.5 h-3.5" />
           Data Template
         </button>
+      </div>
+
+      {/* Uppercase Conversion Checkbox */}
+      <div className="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={convertToUppercase}
+            onChange={(e) => setConvertToUppercase(e.target.checked)}
+            className="w-4 h-4 rounded border-slate-300 text-[#11365c] focus:ring-[#11365c]"
+          />
+          <span className="text-sm font-bold text-slate-700">
+            Convert all text fields to UPPERCASE (Name, Class, Address, etc.)
+          </span>
+        </label>
       </div>
 
       <div 

@@ -6,6 +6,7 @@ export default function ManualAdd() {
   const { addStudent } = useStore();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    serialNumber: '',
     name: '',
     admissionNumber: '',
     studentClass: '',
@@ -26,8 +27,13 @@ export default function ManualAdd() {
 
     setLoading(true);
     try {
-      await addStudent(formData);
+      const submitData = {
+        ...formData,
+        serialNumber: formData.serialNumber ? parseInt(formData.serialNumber) : undefined
+      };
+      await addStudent(submitData);
       setFormData({
+        serialNumber: '',
         name: '',
         admissionNumber: '',
         studentClass: '',
@@ -54,6 +60,7 @@ export default function ManualAdd() {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 gap-4">
+          <FormField label="S. No." value={formData.serialNumber} onChange={(v) => setFormData({...formData, serialNumber: v})} placeholder="e.g. 1" type="number" />
           <FormField label="Full Name" value={formData.name} onChange={(v) => setFormData({...formData, name: v})} required placeholder="e.g. Aryan Sharma" />
           <FormField label="Admission No" value={formData.admissionNumber} onChange={(v) => setFormData({...formData, admissionNumber: v})} required placeholder="e.g. 2024/GIS/482" />
           
@@ -92,12 +99,12 @@ export default function ManualAdd() {
   );
 }
 
-function FormField({ label, value, onChange, required, placeholder }: { label: string, value: string, onChange: (v: string) => void, required?: boolean, placeholder?: string }) {
+function FormField({ label, value, onChange, required, placeholder, type = 'text' }: { label: string, value: string, onChange: (v: string) => void, required?: boolean, placeholder?: string, type?: string }) {
   return (
     <div className="space-y-1">
       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em]">{label}{required && <span className="text-red-500 ml-1">*</span>}</label>
       <input 
-        type="text" 
+        type={type} 
         value={value} 
         onChange={(e) => onChange(e.target.value)}
         required={required}
